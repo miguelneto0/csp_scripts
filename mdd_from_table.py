@@ -21,8 +21,11 @@ def expand_value(value, domain):
         elif '!=' in value:
             return [x for x in domain if x != int(value[2:])]
     else:
-        return [int(value)]
-
+        if isinstance(value, int):
+            return [int(value)]
+        elif isinstance(value, str):
+            return [str(value)]
+        
 def generate_standard_table(table, domains):
     """Gera a tabela extensional expandindo valores com operadores."""
     attributes = table[0]
@@ -91,7 +94,7 @@ domains = {
     'A': [1, 2, 3],
     'B': [1, 2, 3, 4],
     'C': [1, 2, 3, 4, 5],
-    'D': [8, 9, 10]
+    'D': ['B1', 'B2', 'B3']
 }
 
 # Nova tabela de exemplo
@@ -162,13 +165,13 @@ table10 = [
     [1, "*", "*"]]
 
 table11 = [
-    ['A', 'B', 'C'],
-    [1, '>5', 1],
-    ['<=10', 2, '<3'],
-    ['>=4', 1, '*']
+    ['A', 'B', 'C', 'D'],
+    [1, '>3', 1, 'B1'],
+    ['<=10', 2, '<3', 'B2'],
+    ['>=2', 1, '*', 'B3']
 ]
 
-scenario = table2
+scenario = table11
 
 # Criação e visualização do grafo
 graph, collisions = create_csp_graph(scenario, domains)
