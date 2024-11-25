@@ -90,7 +90,8 @@ def plot_graph(G):
 domains = {
     'A': [1, 2, 3],
     'B': [1, 2, 3, 4],
-    'C': [1, 2, 3, 4, 5]
+    'C': [1, 2, 3, 4, 5],
+    'D': [8, 9, 10]
 }
 
 # Nova tabela de exemplo
@@ -106,12 +107,78 @@ table1 = [
     [3, '>2', 4],
     [1, 2, '>3']
 ]
+table2 = [
+    ['A', 'B', 'C'],
+    [1, ">2", 1],
+    [2, 2, 2],   
+    [1, "*", 1]]
+
+table3 = [
+    ['A', 'B', 'C'],
+    [1, 1, 1],
+    [2, 2, 2],   
+    [1, 1, "*"]]
+
+table4 = [
+    ['A', 'B', 'C'],
+    [1, ">2", 1],
+    [2, 2, 2],   
+    [1, 3, 1]]
+
+table5 = [
+    ['A', 'B', 'C'],
+    [1, 1, "*"],
+    [2, 2, 2],   
+    [1, "*", 1]]
+
+table6 = [
+    ['A', 'B', 'C'],
+    [1, 1, "*"],
+    [2, 2, 2],   
+    [1, 1, 1], 
+    [2, "*", 2]]
+
+table7 = [
+    ['A', 'B', 'C'],
+    [1, 1, "*"],
+    [1, "*", 1]]
+
+table8 = [
+    ['A', 'B', 'C'],
+    [1, "*", 1],
+    [1, "*", "*"],
+    [1, 1, "*"]]
+
+table9 = [
+    ['A', 'B', 'C'],
+    [1, 1, "*"],
+    [1, "*", 1],
+    [1, "*", "*"]]
+
+table10 = [
+    ['A', 'B', 'C'],
+    [1, 1, "*"],
+    [1, 1, "*"],
+    [1, "*", "*"]]
+
+table11 = [
+    ['A', 'B', 'C'],
+    [1, '>5', 1],
+    ['<=10', 2, '<3'],
+    ['>=4', 1, '*']
+]
+
+scenario = table2
 
 # Criação e visualização do grafo
-graph, collisions = create_csp_graph(table1, domains)
+graph, collisions = create_csp_graph(scenario, domains)
 plot_graph(graph)
 
-standard_tab = generate_standard_table(table1, domains)
+print("Original table:")
+for i, row in enumerate(scenario):
+    print(f"{row}")
+
+standard_tab = generate_standard_table(scenario, domains)
 print("Standard table:")
 for i, row in enumerate(standard_tab):
     print(f"{i}: {row}")
