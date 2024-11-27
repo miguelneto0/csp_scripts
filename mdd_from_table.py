@@ -1,43 +1,77 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from itertools import product
+from itertools import product, chain
+from scenarios import domains_ex, scenarios
 
 def expand_value(value, domain):
     """Expande os valores com base nos operadores especiais."""
     if isinstance(value, int):
-        return [value]
+        return [value], False
     
     if value == '*':
-        return domain
+        return domain, True
     elif '>' in value or '<' in value:
         if '>=' in value:
-            return [x for x in domain if x >= int(value[2:])]
+            return [x for x in domain if x >= int(value[2:])], True
         elif '<=' in value:
-            return [x for x in domain if x <= int(value[2:])]
+            return [x for x in domain if x <= int(value[2:])], True
         elif '>' in value:
-            return [x for x in domain if x > int(value[1:])]
+            return [x for x in domain if x > int(value[1:])], True
         elif '<' in value:
-            return [x for x in domain if x < int(value[1:])]
+            return [x for x in domain if x < int(value[1:])], True
         elif '!=' in value:
-            return [x for x in domain if x != int(value[2:])]
+            return [x for x in domain if x != int(value[2:])], True
     else:
         if isinstance(value, int):
-            return [int(value)]
+            return [int(value)], False
         elif isinstance(value, str):
-            return [str(value)]
+            return [str(value)], False
         
 def generate_standard_table(table, domains):
     """Gera a tabela extensional expandindo valores com operadores."""
     attributes = table[0]
-    pure_table = []
+    std_table = []
+    cmp_table = []
+    idxs_smart = []
 
     for row in table[1:]:
         expanded_rows = []
+        hasSmart = False
         for attr, value in zip(attributes, row):
-            expanded_rows.append(expand_value(value, domains[attr]))
-        pure_table.extend(product(*expanded_rows))
+            new_rows, isSmart = expand_value(value, domains[attr])
+            expanded_rows.append(new_rows)
+            if isSmart == True:
+                hasSmart = True
+        cmp_table.append(expanded_rows)
+        prev = len(std_table)
+        std_table.extend(product(*expanded_rows))
+        crrt = len(std_table)
+        if hasSmart == True:
+            thrs = crrt - prev
+            indexes = list(range(len(std_table) - thrs, len(std_table)))
+            for i in indexes:
+                idxs_smart.append(i)
+    print(f'idxs_smart = {idxs_smart}')
+        
+    return std_table, cmp_table
 
-    return pure_table
+def compress_table(std_table):
+    """ Gera a tabela compacta (compressed table) a partir da tabela standard (std_table) """
+    compressed_table = []
+
+    # Itera pelas colunas (índices das colunas)
+    for col_idx in range(len(std_table[0])):  # Número de colunas na primeira linha
+        unique_values = set()  # Para armazenar valores únicos dessa coluna
+        
+        # Itera pelas linhas e coleta valores da coluna atual
+        for row in std_table:
+            unique_values.add(row[col_idx])
+        
+        # Adiciona os valores únicos como uma lista para a tabela compactada
+        compressed_table.append(sorted(unique_values))
+
+    # Transforma em formato de lista de listas
+    return [[list(column) for column in compressed_table]]
 
 def create_csp_graph(table, domains):
     """Cria o grafo e identifica colisões."""
@@ -45,13 +79,13 @@ def create_csp_graph(table, domains):
     G.add_node("ROOT")
     G.add_node("SINK")
 
-    standard_tab = generate_standard_table(table, domains)
+    standard_tab, compres_tab = generate_standard_table(table, domains)
 
     # Rastreamento de caminhos únicos e conflitos
     unique_paths = set()
     collisions = []
 
-    # Processa cada tupla na tabela pura
+    # Processa cada tupla na tabela standard
     for index, row in enumerate(standard_tab, start=0):
         path = ["ROOT"]
         conflict_detected = False
@@ -80,6 +114,11 @@ def create_csp_graph(table, domains):
 
     return G, collisions
 
+def print_tab(standard_tab):
+    print(f'Table:')
+    for i, row in enumerate(standard_tab):
+        print(f"{i}: {row}")
+
 def plot_graph(G):
     pos = nx.spring_layout(G)  # Layout automático
     plt.figure(figsize=(12, 8))
@@ -89,115 +128,48 @@ def plot_graph(G):
     plt.title("CSP Graph with Collision Detection", fontsize=14)
     plt.show()
 
-# Domínios dos atributos
-domains = {
-    'A': [1, 2, 3],
-    'B': [1, 2, 3, 4],
-    'C': [1, 2, 3, 4, 5],
-    'D': ['B1', 'B2', 'B3']
-}
 
-# Nova tabela de exemplo
-table = [
-    ['A', 'B', 'C'],  # Atributos
-    [1, 2, 3],
-    [3, 2, 4]
-]
+def update_collision_table(standard_tab, collisions, show_collisions):
+    indexes_to_remove = []
 
-table1 = [
-    ['A', 'B', 'C'],  # Atributos
-    [1, 2, '*'],
-    [3, '>2', 4],
-    [1, 2, '>3']
-]
-table2 = [
-    ['A', 'B', 'C'],
-    [1, ">2", 1],
-    [2, 2, 2],   
-    [1, "*", 1]]
+    if show_collisions == True:
+        # Exibe conflitos detectados
+        print("Detected collisions:")
+    for collision in collisions:
+        idx_collis = collision["tuple_index"]
+        if idx_collis not in indexes_to_remove:
+            indexes_to_remove.append(idx_collis)
+        if show_collisions == True:
+            print(collision)
 
-table3 = [
-    ['A', 'B', 'C'],
-    [1, 1, 1],
-    [2, 2, 2],   
-    [1, 1, "*"]]
+        print(f'collision tuples: {indexes_to_remove}')
 
-table4 = [
-    ['A', 'B', 'C'],
-    [1, ">2", 1],
-    [2, 2, 2],   
-    [1, 3, 1]]
+    # Atualiza tabela sem conflitos
+    standard_tab = [row for i, row in enumerate(standard_tab) if i not in indexes_to_remove]
+    print("Table after removal:")
+    for i, row in enumerate(standard_tab):
+        print(f"{i}: {row}")
+    return standard_tab, indexes_to_remove
 
-table5 = [
-    ['A', 'B', 'C'],
-    [1, 1, "*"],
-    [2, 2, 2],   
-    [1, "*", 1]]
+scenario = scenarios[2]
 
-table6 = [
-    ['A', 'B', 'C'],
-    [1, 1, "*"],
-    [2, 2, 2],   
-    [1, 1, 1], 
-    [2, "*", 2]]
+if __name__ == "__main__":
+    # Criação e visualização do grafo
+    graph, collisions = create_csp_graph(scenario, domains_ex)
+    plot_graph(graph)
 
-table7 = [
-    ['A', 'B', 'C'],
-    [1, 1, "*"],
-    [1, "*", 1]]
+    print("Original table:")
+    for i, row in enumerate(scenario):
+        print(f"{row}")
 
-table8 = [
-    ['A', 'B', 'C'],
-    [1, "*", 1],
-    [1, "*", "*"],
-    [1, 1, "*"]]
+    # Cria e mostra standard table
+    standard_tab, compres_tab = generate_standard_table(scenario, domains_ex)
+    print(f'Standard -')
+    print_tab(standard_tab)
+    print(f'Compressed - ')
+    print_tab(compres_tab)
 
-table9 = [
-    ['A', 'B', 'C'],
-    [1, 1, "*"],
-    [1, "*", 1],
-    [1, "*", "*"]]
-
-table10 = [
-    ['A', 'B', 'C'],
-    [1, 1, "*"],
-    [1, 1, "*"],
-    [1, "*", "*"]]
-
-table11 = [
-    ['A', 'B', 'C', 'D'],
-    [1, '>3', 1, 'B1'],
-    ['<=10', 2, '<3', 'B2'],
-    ['>=2', 1, '*', 'B3']
-]
-
-scenario = table11
-
-# Criação e visualização do grafo
-graph, collisions = create_csp_graph(scenario, domains)
-plot_graph(graph)
-
-print("Original table:")
-for i, row in enumerate(scenario):
-    print(f"{row}")
-
-standard_tab = generate_standard_table(scenario, domains)
-print("Standard table:")
-for i, row in enumerate(standard_tab):
-    print(f"{i}: {row}")
-
-indexes_to_remove = []
-
-# Exibe conflitos detectados
-print("Detected collisions:")
-for collision in collisions:
-    idx_collis = collision["tuple_index"]
-    if idx_collis not in indexes_to_remove:
-        indexes_to_remove.append(idx_collis)
-    print(collision)
-
-print(f'collision tuples: {indexes_to_remove}')
-standard_tab = [row for i, row in enumerate(standard_tab) if i not in indexes_to_remove]
-print("Table after removal:")
-for i, row in enumerate(standard_tab):
-    print(f"{i}: {row}")
+    update_collision_table(standard_tab, collisions, True)
+    # compr = compress_table(std_tab)
+    # print_tab(compr)
+    

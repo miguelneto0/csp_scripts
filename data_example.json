@@ -18,11 +18,10 @@
         "metadata": null,
         "outputStartIndex": 3,
         "columns": ["A", "B", "C", "D"],
-        "rows": [
-            [{"op": "EQ", "values": [1]}, {"op": "GT", "values": [5]}, {"op": "EQ", "values": [1]}, {"op": "EQ", "values": ["B1"]}],
-            [{"op": "LE", "values": [10]}, {"op": "EQ", "values": [2]}, {"op": "LT", "values": [3]}, {"op": "EQ", "values": ["B2"]}],
-            [{"op": "GE", "values": [4]}, {"op": "EQ", "values": [1]}, {"op": "ST", "values": []}, {"op": "EQ", "values": ["B3"]}]
-        ],
+        "rows":[
+    [{"op":"EQ","values":[1]},{"op":"EQ","values":[1]},{"op":"EQ","values":[1]},{"op":"EQ","values":["B1"]}],
+    [{"op":"EQ","values":[2]},{"op":"EQ","values":[2]},{"op":"EQ","values":[2]},{"op":"EQ","values":["B2"]}],
+    [{"op":"EQ","values":[1]},{"op":"EQ","values":[1]},{"op":"ST","values":[]},{"op":"EQ","values":["B3"]}]],
         "audit": null
     }
 }
