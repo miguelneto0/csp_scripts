@@ -100,6 +100,7 @@ def create_csp_graph(table, domains):
         # Verifica se o caminho já existe
         if path_tuple in unique_paths:
             conflict_detected = True
+            print(f'-- collision detected between row {index} row {standard_tab.index(row)}')
             for attr, value in zip(table[0], row):
                 collisions.append({
                     "attribute": attr,
