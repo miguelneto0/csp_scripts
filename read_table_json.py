@@ -1,6 +1,6 @@
 import json
 import sys
-from mdd_from_table import create_csp_graph, generate_standard_table, print_standard_tab, update_collision_table
+from mdd_from_table import create_csp_graph, generate_standard_table, print_tab, update_collision_table
 
 def extract_rows_as_table(columns, rows):
     # Inicializa a tabela com as colunas
@@ -82,9 +82,9 @@ if __name__ == "__main__":
     print(f'domains = {domains}')
     for row in scenario:
         print(row)
-    g, c = create_csp_graph(scenario, domains)
-    standard = generate_standard_table(scenario, domains)
-    print_standard_tab(standard)
+    g, c, p, e = create_csp_graph(scenario, domains)
+    standard, compres, indx = generate_standard_table(scenario, domains)
+    print_tab(standard)
     
     upd_tab, idxs_rmv = update_collision_table(standard, c, True)
     # Retorna a tabela modificada em JSON

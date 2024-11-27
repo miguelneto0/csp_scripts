@@ -53,7 +53,7 @@ def generate_standard_table(table, domains):
                 idxs_smart.append(i)
     print(f'idxs_smart = {idxs_smart}')
         
-    return std_table, cmp_table
+    return std_table, cmp_table, idxs_smart
 
 def compress_table(std_table):
     """ Gera a tabela compacta (compressed table) a partir da tabela standard (std_table) """
@@ -79,11 +79,12 @@ def create_csp_graph(table, domains):
     G.add_node("ROOT")
     G.add_node("SINK")
 
-    standard_tab, compres_tab = generate_standard_table(table, domains)
+    standard_tab, compres_tab, indexs = generate_standard_table(table, domains)
 
     # Rastreamento de caminhos únicos e conflitos
     unique_paths = set()
     collisions = []
+    collision_pairs = []
 
     # Processa cada tupla na tabela standard
     for index, row in enumerate(standard_tab, start=0):
@@ -100,7 +101,8 @@ def create_csp_graph(table, domains):
         # Verifica se o caminho já existe
         if path_tuple in unique_paths:
             conflict_detected = True
-            print(f'-- collision detected between row {index} row {standard_tab.index(row)}')
+            print(f'-- collision detected between row {index} and row {standard_tab.index(row)}')
+            collision_pairs.append((standard_tab.index(row), index))
             for attr, value in zip(table[0], row):
                 collisions.append({
                     "attribute": attr,
@@ -112,8 +114,14 @@ def create_csp_graph(table, domains):
             # Adiciona arestas no grafo
             for i in range(len(path) - 1):
                 G.add_edge(path[i], path[i + 1])
-
-    return G, collisions
+    # ADICIONAR LOGICA PARA GERAR EXEPTION OU OS CONFLITOS A SEREM REMOVIDOS
+    first_list = [par[0] for par in collision_pairs]
+    intersect = [item for item in indexs if item in first_list]
+    print(f'intersect = {intersect}')
+    excep = None
+    if len(intersect) > 0:
+        excep = "Collision detected. Insufficient info to remove collision tuples"
+    return G, collisions, collision_pairs, excep
 
 def print_tab(standard_tab):
     print(f'Table:')
@@ -133,15 +141,14 @@ def plot_graph(G):
 def update_collision_table(standard_tab, collisions, show_collisions):
     indexes_to_remove = []
 
-    if show_collisions == True:
-        # Exibe conflitos detectados
+    if show_collisions == True:     # Exibe conflitos detectados
         print("Detected collisions:")
     for collision in collisions:
         idx_collis = collision["tuple_index"]
         if idx_collis not in indexes_to_remove:
             indexes_to_remove.append(idx_collis)
-        if show_collisions == True:
-            print(collision)
+        # if show_collisions == True:
+        #     print(collision)
 
         print(f'collision tuples: {indexes_to_remove}')
 
@@ -152,11 +159,10 @@ def update_collision_table(standard_tab, collisions, show_collisions):
         print(f"{i}: {row}")
     return standard_tab, indexes_to_remove
 
-scenario = scenarios[2]
+scenario = scenarios[3]
 
-if __name__ == "__main__":
-    # Criação e visualização do grafo
-    graph, collisions = create_csp_graph(scenario, domains_ex)
+if __name__ == "__main__":          # Criação e visualização do grafo
+    graph, collisions, pairs, excep = create_csp_graph(scenario, domains_ex)
     plot_graph(graph)
 
     print("Original table:")
@@ -164,13 +170,19 @@ if __name__ == "__main__":
         print(f"{row}")
 
     # Cria e mostra standard table
-    standard_tab, compres_tab = generate_standard_table(scenario, domains_ex)
+    standard_tab, compres_tab, idxs = generate_standard_table(scenario, domains_ex)
     print(f'Standard -')
     print_tab(standard_tab)
     print(f'Compressed - ')
     print_tab(compres_tab)
 
-    update_collision_table(standard_tab, collisions, True)
+    std_tab, tup_rmv = update_collision_table(standard_tab, collisions, True)
+    if excep == None:
+        print(f'Collision resolved. Removed tuples: {tup_rmv}')        
+    else:
+        print(excep)
+        print(f'idxs from smart: {idxs}')
+        print(f'collision rows: {pairs}')
     # compr = compress_table(std_tab)
     # print_tab(compr)
     
